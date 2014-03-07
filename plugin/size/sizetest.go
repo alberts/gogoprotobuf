@@ -91,17 +91,19 @@ func (p *test) Generate(imports generator.PluginImports, file *generator.FileDes
 			used = true
 			p.P(`func Benchmark`, ccTypeName, `Size(b *`, testingPkg.Use(), `.B) {`)
 			p.In()
-			p.P(`popr := `, randPkg.Use(), `.New(`, randPkg.Use(), `.NewSource(`, timePkg.Use(), `.Now().UnixNano()))`)
-			p.P(`total := 0`)
-			p.P(`b.ResetTimer()`)
-			p.P(`b.StopTimer()`)
-			p.P(`for i := 0; i < b.N; i++ {`)
+			p.P(`popr := `, randPkg.Use(), `.New(`, randPkg.Use(), `.NewSource(0))`)
+			p.P(`var populated []*`, ccTypeName)
+			p.P(`for i := 0; i < 10000; i++ {`)
 			p.In()
 			p.P(`p := NewPopulated`, ccTypeName, `(popr, false)`)
-			p.P(`b.StartTimer()`)
-			p.P(`size := p.Size()`)
-			p.P(`b.StopTimer()`)
-			p.P(`total += size`)
+			p.P(`populated = append(populated, p)`)
+			p.Out()
+			p.P(`}`)
+			p.P(`total := 0`)
+			p.P(`b.ResetTimer()`)
+			p.P(`for i := 0; i < b.N; i++ {`)
+			p.In()
+			p.P(`total += populated[i % len(populated)].Size()`)
 			p.Out()
 			p.P(`}`)
 			p.P(`b.SetBytes(int64(total / b.N))`)
@@ -109,7 +111,6 @@ func (p *test) Generate(imports generator.PluginImports, file *generator.FileDes
 			p.P(`}`)
 			p.P()
 		}
-
 	}
 	return used
 }
